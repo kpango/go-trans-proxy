@@ -15,6 +15,7 @@ const (
 	HttpsPort   = ":3130"
 	SSLCertFile = "./cert.pem"
 	SSLKeyFile  = "./key.pem"
+	Expire = 45
 )
 
 type MemoryCache struct {
@@ -170,7 +171,7 @@ func (c *MemoryCache) MonitorData(dur time.Duration) {
 }
 
 func (p *PageData) CheckPageExpire() bool {
-	return int(time.Since(p.t).Seconds()) >= 45
+	return int(time.Since(p.t).Seconds()) >= Expire
 }
 
 func main() {
