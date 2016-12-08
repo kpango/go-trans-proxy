@@ -23,18 +23,18 @@ type MemoryCache struct {
 	cache map[string]PageData
 }
 
-type Cache interface {
-	Get(string) (PageData, bool)
-	Set(string, PageData) error
-	Delete(string)
-}
-
 type PageData struct {
 	t       time.Time
 	status  int
 	header  http.Header
 	body    []byte
 	cookies []*http.Cookie
+}
+
+func NewMemoryCache() *MemoryCache {
+	return &MemoryCache{
+		cache: make(map[string]PageData),
+	}
 }
 
 func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
@@ -180,13 +180,9 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	log.Println("go-trans-proxy server running")
+	log.Println("go-trans-proxy server started")
 
-	c := new(MemoryCache)
-
-	if c.cache == nil {
-		c.cache = make(map[string]PageData)
-	}
+	c := NewMemoryCache()
 
 	go c.MonitorData(20)
 
