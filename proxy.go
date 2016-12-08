@@ -15,7 +15,6 @@ const (
 	HttpsPort   = ":3130"
 	SSLCertFile = "./cert.pem"
 	SSLKeyFile  = "./key.pem"
-	Expire = 45
 )
 
 type MemoryCache struct {
@@ -70,7 +69,9 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 301 || resp.StatusCode == 302 || resp.StatusCode == 303 || resp.StatusCode == 307 {
+	//TODO 雑に書かないでちゃんと処理する
+	if resp.StatusCode/100 == 3 {
+		// if resp.StatusCode == 301 || resp.StatusCode == 302 || resp.StatusCode == 303 || resp.StatusCode == 307 {
 		// TODO Location にリダイレクトする。
 		log.Println("\n\n" + resp.Header["Location"][0] + "\n\n")
 		log.Println(resp.Request.URL.String())
@@ -171,7 +172,7 @@ func (c *MemoryCache) MonitorData(dur time.Duration) {
 }
 
 func (p *PageData) CheckPageExpire() bool {
-	return int(time.Since(p.t).Seconds()) >= Expire
+	return int(time.Since(p.t).Seconds()) >= 45
 }
 
 func main() {
