@@ -88,6 +88,8 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie)
 	}
 
+	
+	//TODO 雑に実装しないでちゃんとする	
 	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 	w.Header().Set("Access-Control-Allow-Headers", "Origin, Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
