@@ -56,7 +56,6 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	r.Header.Del("Accept-Encoding")
 	r.Header.Del("Proxy-Connection")
 	r.Header.Del("Proxy-Authenticate")
 	r.Header.Del("Proxy-Authorization")
