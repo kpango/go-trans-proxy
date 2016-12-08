@@ -29,7 +29,7 @@ type Cache interface {
 }
 
 type PageData struct {
-	time    time.Time
+	t       time.Time
 	status  int
 	header  http.Header
 	body    []byte
@@ -70,10 +70,11 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 301 || resp.StatusCode == 302 || resp.StatusCode == 303 || resp.StatusCode == 307 {
-		// TODO redirect処理を入れる
+		// TODO Location にリダイレクトする。
 		log.Println("\n\n" + resp.Header["Location"][0] + "\n\n")
 		log.Println(resp.Request.URL.String())
 		log.Println(resp)
+		return
 	}
 
 	contents, err := ioutil.ReadAll(resp.Body)
@@ -87,12 +88,11 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie)
 	}
 
-	
-	//TODO 雑に実装しないでちゃんとする	
-	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	w.Header().Set("Access-Control-Allow-Headers", "Origin, Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow -Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	//TODO 雑に書かないでちゃんと処理する
+	// w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	// w.Header().Set("Access-Control-Allow-Headers", "Origin, Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	// w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// w.Header().Set("Access-Control-Allow -Methods", "POST, GET, OPTIONS, PUT, DELETE")
 
 	copyHeader(w, resp.Header)
 
@@ -106,7 +106,7 @@ func (c *MemoryCache) passthrough(w http.ResponseWriter, r *http.Request) {
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		c.Set(r.UserAgent()+r.URL.String(), PageData{
-			time:    time.Now(),
+			t:       time.Now(),
 			status:  resp.StatusCode,
 			header:  w.Header(),
 			body:    contents,
@@ -148,22 +148,29 @@ func (c *MemoryCache) Delete(key string) {
 	c.mu.Unlock()
 }
 
-func (c *MemoryCache) MonitorData(second time.Duration) {
+func (c *MemoryCache) MonitorData(dur time.Duration) {
+	ticker := time.NewTicker(dur)
+	defer ticker.Stop()
+
 	for {
-		go func() {
-			for key, value := range c.cache {
-				if value.CheckPageExpire() {
-					log.Println("cache deleted! key: " + key)
-					c.Delete(key)
+		select {
+		case <-ticker.C:
+			// TODO 無駄にgoroutineを増やさない
+			go func() {
+				for key, value := range c.cache {
+					if value.CheckPageExpire() {
+						log.Println("cache deleted! key: " + key)
+						c.Delete(key)
+					}
 				}
-			}
-		}()
-		time.Sleep(second * time.Second)
+			}()
+		}
 	}
+
 }
 
 func (p *PageData) CheckPageExpire() bool {
-	return int(time.Since(p.time).Seconds()) >= 45
+	return int(time.Since(p.t).Seconds()) >= 45
 }
 
 func main() {
